@@ -246,6 +246,12 @@ namespace
             const SCUINT dwRecvBufferSize = dwRecvLength;
             rv = SCardTransmit(handle, pioSendPci, pbSendBuffer, dwSendLength, nullptr, pbRecvBuffer, &dwRecvLength);
 
+            if (dwRecvLength < 2) {
+                // Any valid response should be at least 2 bytes (response status)
+                // However the protocol itself could fail
+                return SCARD_E_UNEXPECTED;
+            }
+
             uint8_t SW1 = pbRecvBuffer[dwRecvLength - 2];
             // Check for the MoreDataAvailable SW1 code. If present, send GetResponse command repeatedly, until success
             // SW, or filling the receiving buffer.
@@ -284,14 +290,14 @@ namespace
                 }
             }
 
-            const uint8_t SW_HIGH = pbRecvBuffer[dwRecvLength - 2];
-            const uint8_t SW_LOW = pbRecvBuffer[dwRecvLength - 1];
             if (rv == SCARD_S_SUCCESS) {
                 if (dwRecvLength < 2) {
                     // Any valid response should be at least 2 bytes (response status)
                     // However the protocol itself could fail
                     rv = SCARD_E_UNEXPECTED;
                 } else {
+                    const uint8_t SW_HIGH = pbRecvBuffer[dwRecvLength - 2];
+                    const uint8_t SW_LOW = pbRecvBuffer[dwRecvLength - 1];
                     if (SW_HIGH == SW_OK_HIGH && SW_LOW == SW_OK_LOW) {
                         rv = SCARD_S_SUCCESS;
                     } else if (SW_HIGH == SW_PRECOND_HIGH && SW_LOW == SW_PRECOND_LOW) {
