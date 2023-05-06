@@ -284,22 +284,21 @@ namespace
                 }
             }
 
+            const uint8_t SW_HIGH = pbRecvBuffer[dwRecvLength - 2];
+            const uint8_t SW_LOW = pbRecvBuffer[dwRecvLength - 1];
             if (rv == SCARD_S_SUCCESS) {
                 if (dwRecvLength < 2) {
                     // Any valid response should be at least 2 bytes (response status)
                     // However the protocol itself could fail
                     rv = SCARD_E_UNEXPECTED;
                 } else {
-                    if (pbRecvBuffer[dwRecvLength - 2] == SW_OK_HIGH && pbRecvBuffer[dwRecvLength - 1] == SW_OK_LOW) {
+                    if (SW_HIGH == SW_OK_HIGH && SW_LOW == SW_OK_LOW) {
                         rv = SCARD_S_SUCCESS;
-                    } else if (pbRecvBuffer[dwRecvLength - 2] == SW_PRECOND_HIGH
-                               && pbRecvBuffer[dwRecvLength - 1] == SW_PRECOND_LOW) {
+                    } else if (SW_HIGH == SW_PRECOND_HIGH && SW_LOW == SW_PRECOND_LOW) {
                         // This happens if the key requires eg. a button press or if the applet times out
                         // Solution: Re-present the card to the reader
                         rv = SCARD_W_CARD_NOT_AUTHENTICATED;
-                    } else if ((pbRecvBuffer[dwRecvLength - 2] == SW_NOTFOUND_HIGH
-                                && pbRecvBuffer[dwRecvLength - 1] == SW_NOTFOUND_LOW)
-                               || pbRecvBuffer[dwRecvLength - 2] == SW_UNSUP_HIGH) {
+                    } else if ((SW_HIGH == SW_NOTFOUND_HIGH && SW_LOW == SW_NOTFOUND_LOW) || SW_HIGH == SW_UNSUP_HIGH) {
                         // This happens eg. during a select command when the AID is not found
                         rv = SCARD_E_FILE_NOT_FOUND;
                     } else {
